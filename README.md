@@ -42,4 +42,4 @@ if the game updated and mods broke, just re-run the setup script.
 
 ---
 
-not affiliated with or endorsed by Jaterer Worldwide.
+based on [swyf-modding/Setup](https://github.com/swyf-modding/Setup) by Ras and KrakenDev — not affiliated with or endorsed by Jaterer Worldwide.
