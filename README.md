@@ -1,4 +1,5 @@
-# modding-setup
+# Modding Setup
+creds to the ras or sum he made the original
 
 gets BepInEx running on Scam With Your Friends so you can load mods.
 
