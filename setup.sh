@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Scam With Your Friends - modding setup (Linux / Mac)
+# Scam With Your Friends - modding setup (Linux via Proton / Mac / Windows)
 # Run once. Re-run after any game update.
 #
 #   ./setup.sh
@@ -7,11 +7,10 @@
 
 set -euo pipefail
 
+# This is a Windows game. Even on Linux it runs through Proton, so we always
+# use the Windows BepInEx build with the winhttp.dll doorstop.
 BE_VERSION="5.4.23.5"
-case "$(uname -s)" in
-    Darwin*) BE_URL="https://github.com/BepInEx/BepInEx/releases/download/v${BE_VERSION}/BepInEx_macos_universal_${BE_VERSION}.zip" ;;
-    *)       BE_URL="https://github.com/BepInEx/BepInEx/releases/download/v${BE_VERSION}/BepInEx_linux_x64_${BE_VERSION}.zip" ;;
-esac
+BE_URL="https://github.com/BepInEx/BepInEx/releases/download/v${BE_VERSION}/BepInEx_win_x64_${BE_VERSION}.zip"
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
 
@@ -43,38 +42,40 @@ fi
 
 echo -e "${GREEN}Game:${NC} $GAME"
 
-# ── BepInEx ──────────────────────────────────────────────────────────────────
+# ── Doorstop (vendored) ──────────────────────────────────────────────────────
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+VENDOR="$SCRIPT_DIR/vendor/doorstop"
+
+for f in winhttp.dll .doorstop_version doorstop_config.ini; do
+    if [ ! -f "$GAME/$f" ]; then
+        cp "$VENDOR/$f" "$GAME/$f"
+        echo "+ $f"
+    fi
+done
+
+# ── BepInEx (Windows build) ──────────────────────────────────────────────────
 
 if [ -f "$GAME/BepInEx/core/BepInEx.dll" ]; then
     echo "BepInEx already installed, skipping download"
 else
-    echo "Downloading BepInEx ${BE_VERSION}..."
+    echo "Downloading BepInEx ${BE_VERSION} (Windows build)..."
     TMP=$(mktemp -d)
     trap 'rm -rf "$TMP"' EXIT
     curl -fsSL "$BE_URL" -o "$TMP/bepinex.zip"
     unzip -q "$TMP/bepinex.zip" -d "$TMP/bepinex"
-
     cp -r "$TMP/bepinex/BepInEx" "$GAME/BepInEx"
-    [ -f "$TMP/bepinex/run_bepinex.sh" ] && cp "$TMP/bepinex/run_bepinex.sh" "$GAME/run_bepinex.sh"
-    [ -f "$TMP/bepinex/doorstop_libs/libdoorstop.so" ] && \
-        cp -r "$TMP/bepinex/doorstop_libs" "$GAME/doorstop_libs"
-    [ -f "$TMP/bepinex/.doorstop_version" ] && cp "$TMP/bepinex/.doorstop_version" "$GAME/.doorstop_version"
     echo -e "${GREEN}+ BepInEx installed${NC}"
 fi
 
 mkdir -p "$GAME/BepInEx/plugins"
-
-if [ -f "$GAME/run_bepinex.sh" ]; then
-    chmod +x "$GAME/run_bepinex.sh"
-    echo "  run_bepinex.sh is executable"
-fi
 
 # ── corlib override ──────────────────────────────────────────────────────────
 
 OVERRIDE="$GAME/unstripped_corlib"
 mkdir -p "$OVERRIDE"
 SEEDED=0
-for dll in "$(dirname "$0")/vendor/corlib/"*.dll; do
+for dll in "$SCRIPT_DIR/vendor/corlib/"*.dll; do
     name=$(basename "$dll")
     if [ ! -f "$OVERRIDE/$name" ]; then
         cp "$dll" "$OVERRIDE/$name"
@@ -86,7 +87,6 @@ done
 
 # ── assembly patches ─────────────────────────────────────────────────────────
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PATCHER="$SCRIPT_DIR/tools/patcher"
 
 if command -v dotnet &>/dev/null; then
@@ -106,9 +106,9 @@ fi
 
 echo ""
 echo -e "${GREEN}Done!${NC}"
-if [ -f "$GAME/run_bepinex.sh" ]; then
-    echo "Launch the game with: $GAME/run_bepinex.sh"
-else
-    echo "Launch through Steam as normal."
-fi
+echo ""
+echo "Steam launch options (required for Proton):"
+echo -e "  ${YELLOW}WINEDLLOVERRIDES=\"winhttp=n,b\" %command%${NC}"
+echo ""
+echo "In Steam: right-click the game -> Properties -> Launch Options -> paste the above."
 echo "Drop mod .dll files into: $GAME/BepInEx/plugins/"

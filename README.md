@@ -18,9 +18,15 @@ cd Modding-Setup
 chmod +x setup.sh && ./setup.sh
 ```
 
-it'll find your game on its own if you installed through steam. after it's done, put mod `.dll` files in `BepInEx/plugins/` in your game folder and launch the game.
+it'll find your game on its own if you installed through steam. after it's done, put mod `.dll` files in `BepInEx/plugins/` in your game folder.
 
-if the game updated and mods broke, just run `.\setup.ps1` again.
+**Linux (Proton):** set this in Steam launch options (right-click game -> Properties -> Launch Options):
+```
+WINEDLLOVERRIDES="winhttp=n,b" %command%
+```
+then launch normally through Steam.
+
+if the game updated and mods broke, just re-run the setup script.
 
 ## game not found?
 
