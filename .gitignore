@@ -1,0 +1,6 @@
+# PowerShell
+*.psm1
+
+# dotnet build output
+tools/patcher/bin/
+tools/patcher/obj/
